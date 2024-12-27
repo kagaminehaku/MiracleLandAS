@@ -27,10 +27,31 @@ namespace MiracleLandAS.Services
             await _httpClient.PostAsJsonAsync("/api/AdminProducts", product);
         }
 
-        public async Task UpdateProductAsync(PostPutProduct product)
+        public async Task UpdateProductAsync(PostPutProductNoImage product)
         {
-            await _httpClient.PutAsJsonAsync($"/api/AdminProducts/{product.Pid}", product);
+            // Create a MultipartFormDataContent object to hold the form data
+            var formContent = new MultipartFormDataContent
+    {
+        { new StringContent(product.Pid.ToString()), "Pid" },
+        { new StringContent(product.Pname), "Pname" },
+        { new StringContent(product.Pprice.ToString()), "Pprice" },
+        { new StringContent(product.Pquantity.ToString()), "Pquantity" },
+        { new StringContent(product.Pinfo), "Pinfo" },
+    };
+
+            // Send the form content to the API using PUT
+            var response = await _httpClient.PutAsync("/api/Products/UpdateProduct", formContent);
+
+            // Ensure the response is successful
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Error updating product: {response.StatusCode}, {error}");
+            }
         }
+
+
+
 
         public async Task DeleteProductAsync(Guid productId)
         {

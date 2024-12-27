@@ -66,6 +66,10 @@
                     </div>
                     <div class="modal-body">
                         <form>
+                            @* <div class="mb-3">
+                                <label for="productName" class="form-label">Name</label>
+                                <input id="productName" class="form-control" @bind="selectedProduct.Pid" />
+                            </div> *@
                             <div class="mb-3">
                                 <label for="productName" class="form-label">Name</label>
                                 <input id="productName" class="form-control" @bind="selectedProduct.Pname" />
@@ -103,7 +107,7 @@
     private bool isLoading = true;
     private bool showEditForm = false;
     private bool isEdit = false;
-    private PostPutProduct selectedProduct = new();
+    private PostPutProductNoImage selectedProduct = new();
     private string? uploadedImageContent;
     private string tokenMessage;
 
@@ -122,31 +126,30 @@
     private void AddNewProduct()
     {
         isEdit = false;
-        selectedProduct = new PostPutProduct { Pid = Guid.NewGuid() };
+        selectedProduct = new PostPutProductNoImage { Pid = Guid.NewGuid() };
         showEditForm = true;
     }
 
     private void EditProduct(Product product)
     {
         isEdit = true;
-        selectedProduct = new PostPutProduct
+        selectedProduct = new PostPutProductNoImage
             {
                 Pid = product.Pid,
                 Pname = product.Pname,
                 Pprice = product.Pprice,
                 Pquantity = product.Pquantity,
                 Pinfo = product.Pinfo,
-                PimgContent = null,
             };
         showEditForm = true;
     }
 
     private async Task SaveProduct()
     {
-        if (!string.IsNullOrEmpty(uploadedImageContent))
-        {
-            selectedProduct.PimgContent = uploadedImageContent;
-        }
+        // if (!string.IsNullOrEmpty(uploadedImageContent))
+        // {
+        //     //Put product image
+        // }
 
         if (isEdit)
         {
@@ -154,7 +157,14 @@
         }
         else
         {
-            await ProductsService.AddProductAsync(selectedProduct);
+            var addproduct = new PostPutProduct();
+            addproduct.Pid = Guid.NewGuid();
+            addproduct.Pname = selectedProduct.Pname;
+            addproduct.Pprice = selectedProduct.Pprice;
+            addproduct.Pquantity = selectedProduct.Pquantity;
+            addproduct.Pinfo = selectedProduct.Pinfo;
+            addproduct.PimgContent = uploadedImageContent;
+            await ProductsService.AddProductAsync(addproduct);
         }
 
         await LoadProducts();
@@ -164,7 +174,7 @@
     private void CloseEditForm()
     {
         showEditForm = false;
-        selectedProduct = new PostPutProduct();
+        selectedProduct = new PostPutProductNoImage();
         uploadedImageContent = null;
     }
 
@@ -177,9 +187,14 @@
     private async Task OnImageUpload(InputFileChangeEventArgs e)
     {
         var file = e.File;
-        using var stream = new MemoryStream();
-        await file.OpenReadStream().CopyToAsync(stream);
-        uploadedImageContent = Convert.ToBase64String(stream.ToArray());
+        if (file != null)
+        {
+            using var stream = file.OpenReadStream(10 * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            byte[] fileBytes = memoryStream.ToArray();
+            uploadedImageContent = Convert.ToBase64String(fileBytes);
+        }
     }
 }
 @if (!string.IsNullOrEmpty(tokenMessage))

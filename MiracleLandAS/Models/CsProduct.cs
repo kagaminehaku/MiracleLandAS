@@ -58,4 +58,18 @@ namespace MiracleLandAS.Models
 
         public string Pimg { get; set; } = null!;
     }
+
+    public class PostPutProductNoImage
+    {
+        public Guid Pid { get; set; }
+
+        public string Pname { get; set; } = null!;
+
+        public decimal Pprice { get; set; }
+
+        public int Pquantity { get; set; }
+
+        public string Pinfo { get; set; } = null!;
+
+    }
 }
