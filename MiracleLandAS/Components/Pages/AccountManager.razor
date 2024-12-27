@@ -1,0 +1,87 @@
+﻿@page "/AdminAccountsManager"
+@inject UserManager UserManager
+@inject NavigationManager Navigation
+@using MiracleLandAS.Models
+@using MiracleLandAS.Services
+
+<div class="container mt-5">
+    <h1 class="text-center">Admin Accounts Manager</h1>
+
+    @if (isLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (customers != null && customers.Count > 0)
+    {
+        <div class="row">
+            @foreach (var customer in customers)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">@customer.Username</h5>
+                            <p class="card-text"><strong>Email:</strong> @customer.Email</p>
+                            <p class="card-text"><strong>Phone:</strong> @customer.Phone</p>
+                            <p class="card-text"><strong>Address:</strong> @customer.Address</p>
+                            <p class="card-text"><strong>Status:</strong> @(customer.IsActive ? "Active" : "Banned")</p>
+                            @if (customer.IsActive)
+                            {
+                                <button class="btn btn-danger" @onclick="() => BanUser(customer.Uid)">Ban User</button>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">User Banned</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning text-center" role="alert">
+            No customers found.
+        </div>
+    }
+</div>
+
+@code {
+    private List<GetUserList>? customers;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomers();
+    }
+
+    private async Task LoadCustomers()
+    {
+        isLoading = true;
+        try
+        {
+            customers = await UserManager.GetCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading customers: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task BanUser(Guid userId)
+    {
+        var result = await UserManager.BanUserAsync(userId);
+        if (result)
+        {
+            await LoadCustomers();
+        }
+    }
+}
