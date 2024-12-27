@@ -22,6 +22,7 @@ namespace MiracleLandAS
             builder.Services.AddSingleton<CsShoppingCartService>();
             builder.Services.AddSingleton<OrderService>();
             builder.Services.AddSingleton<UserManager>();
+            builder.Services.AddSingleton<AdminProductsService>();
             builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG

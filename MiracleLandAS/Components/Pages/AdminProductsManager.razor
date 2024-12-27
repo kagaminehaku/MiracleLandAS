@@ -1,0 +1,188 @@
+﻿@page "/AdminProductsManager"
+@inject AdminProductsService ProductsService
+@inject NavigationManager Navigation
+@using MiracleLandAS.Models
+@using MiracleLandAS.Services
+
+<div class="container mt-5">
+    <h1 class="text-center">Product Management</h1>
+
+    <div class="text-end mb-3">
+        <button class="btn btn-primary" @onclick="AddNewProduct">Add New Product</button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (products?.Count > 0)
+    {
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Image</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in products)
+                {
+                    <tr>
+                        <td>@product.Pid</td>
+                        <td>@product.Pname</td>
+                        <td>@string.Format("{0:C}", product.Pprice)</td>
+                        <td>@product.Pquantity</td>
+                        <td><img src="@product.Pimg" alt="@product.Pname" class="img-thumbnail" style="max-width: 100px;" /></td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" @onclick="() => EditProduct(product)">Edit</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteProduct(product.Pid)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning text-center">No products available.</div>
+    }
+
+    @if (showEditForm)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@((isEdit ? "Edit Product" : "Add Product"))</h5>
+                        <button type="button" class="btn-close" @onclick="CloseEditForm"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="mb-3">
+                                <label for="productName" class="form-label">Name</label>
+                                <input id="productName" class="form-control" @bind="selectedProduct.Pname" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="productPrice" class="form-label">Price</label>
+                                <input id="productPrice" type="number" class="form-control" @bind="selectedProduct.Pprice" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="productQuantity" class="form-label">Quantity</label>
+                                <input id="productQuantity" type="number" class="form-control" @bind="selectedProduct.Pquantity" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="productInfo" class="form-label">Info</label>
+                                <textarea id="productInfo" class="form-control" @bind="selectedProduct.Pinfo"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="avatar" class="form-label">Image</label>
+                                <InputFile OnChange="OnImageUpload" class="form-control" />
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="CloseEditForm">Cancel</button>
+                        <button class="btn btn-primary" @onclick="SaveProduct">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Product> products = new();
+    private bool isLoading = true;
+    private bool showEditForm = false;
+    private bool isEdit = false;
+    private PostPutProduct selectedProduct = new();
+    private string? uploadedImageContent;
+    private string tokenMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+        products = await ProductsService.GetProductsAsync();
+        isLoading = false;
+    }
+
+    private void AddNewProduct()
+    {
+        isEdit = false;
+        selectedProduct = new PostPutProduct { Pid = Guid.NewGuid() };
+        showEditForm = true;
+    }
+
+    private void EditProduct(Product product)
+    {
+        isEdit = true;
+        selectedProduct = new PostPutProduct
+            {
+                Pid = product.Pid,
+                Pname = product.Pname,
+                Pprice = product.Pprice,
+                Pquantity = product.Pquantity,
+                Pinfo = product.Pinfo,
+                PimgContent = null,
+            };
+        showEditForm = true;
+    }
+
+    private async Task SaveProduct()
+    {
+        if (!string.IsNullOrEmpty(uploadedImageContent))
+        {
+            selectedProduct.PimgContent = uploadedImageContent;
+        }
+
+        if (isEdit)
+        {
+            await ProductsService.UpdateProductAsync(selectedProduct);
+        }
+        else
+        {
+            await ProductsService.AddProductAsync(selectedProduct);
+        }
+
+        await LoadProducts();
+        CloseEditForm();
+    }
+
+    private void CloseEditForm()
+    {
+        showEditForm = false;
+        selectedProduct = new PostPutProduct();
+        uploadedImageContent = null;
+    }
+
+    private async Task DeleteProduct(Guid productId)
+    {
+        await ProductsService.DeleteProductAsync(productId);
+        await LoadProducts();
+    }
+
+    private async Task OnImageUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        using var stream = new MemoryStream();
+        await file.OpenReadStream().CopyToAsync(stream);
+        uploadedImageContent = Convert.ToBase64String(stream.ToArray());
+    }
+}
+@if (!string.IsNullOrEmpty(tokenMessage))
+{
+    <div class="alert alert-info mt-3">@tokenMessage</div>
+}
