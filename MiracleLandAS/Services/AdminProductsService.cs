@@ -27,9 +27,13 @@ namespace MiracleLandAS.Services
             await _httpClient.PostAsJsonAsync("/api/AdminProducts", product);
         }
 
+        public async Task PatchProduct(EditProductImage editProductImage)
+        {
+            await _httpClient.PatchAsJsonAsync("/api/AdminProducts/UpdateProductImage", editProductImage);
+        }
+
         public async Task UpdateProductAsync(PostPutProductNoImage product)
         {
-            // Create a MultipartFormDataContent object to hold the form data
             var formContent = new MultipartFormDataContent
     {
         { new StringContent(product.Pid.ToString()), "Pid" },
@@ -39,10 +43,8 @@ namespace MiracleLandAS.Services
         { new StringContent(product.Pinfo), "Pinfo" },
     };
 
-            // Send the form content to the API using PUT
             var response = await _httpClient.PutAsync("/api/Products/UpdateProduct", formContent);
 
-            // Ensure the response is successful
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();

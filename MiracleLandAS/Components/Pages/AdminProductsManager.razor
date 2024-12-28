@@ -146,11 +146,13 @@
 
     private async Task SaveProduct()
     {
-        // if (!string.IsNullOrEmpty(uploadedImageContent))
-        // {
-        //     //Put product image
-        // }
-
+        if (!string.IsNullOrEmpty(uploadedImageContent))
+        {
+            var editProductImage = new EditProductImage();
+            editProductImage.Pid = selectedProduct.Pid;
+            editProductImage.ProductImgContent = uploadedImageContent;
+            await ProductsService.PatchProduct(editProductImage);
+        }
         if (isEdit)
         {
             await ProductsService.UpdateProductAsync(selectedProduct);

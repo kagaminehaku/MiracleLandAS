@@ -72,4 +72,10 @@ namespace MiracleLandAS.Models
         public string Pinfo { get; set; } = null!;
 
     }
+
+    public class EditProductImage
+    {
+        public Guid Pid { get; set; }
+        public string? ProductImgContent { get; set; }
+    }
 }
