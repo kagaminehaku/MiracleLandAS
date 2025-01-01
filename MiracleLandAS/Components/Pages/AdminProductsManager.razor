@@ -7,8 +7,13 @@
 <div class="container mt-5">
     <h1 class="text-center">Product Management</h1>
 
-    <div class="text-end mb-3">
-        <button class="btn btn-primary" @onclick="AddNewProduct">Add New Product</button>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Search by product name..." @bind="searchQuery" @oninput="(e) => FilterProducts(e.Value.ToString())" />
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-primary" @onclick="AddNewProduct">Add New Product</button>
+        </div>
     </div>
 
     @if (isLoading)
@@ -19,7 +24,7 @@
             </div>
         </div>
     }
-    else if (products?.Count > 0)
+    else if (filteredProducts?.Count > 0)
     {
         <table class="table table-bordered table-hover">
             <thead class="table-dark">
@@ -33,7 +38,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var product in products)
+                @foreach (var product in filteredProducts)
                 {
                     <tr>
                         <td>@product.Pid</td>
@@ -66,10 +71,6 @@
                     </div>
                     <div class="modal-body">
                         <form>
-                            @* <div class="mb-3">
-                                <label for="productName" class="form-label">Name</label>
-                                <input id="productName" class="form-control" @bind="selectedProduct.Pid" />
-                            </div> *@
                             <div class="mb-3">
                                 <label for="productName" class="form-label">Name</label>
                                 <input id="productName" class="form-control" @bind="selectedProduct.Pname" />
@@ -104,12 +105,13 @@
 
 @code {
     private List<Product> products = new();
+    private List<Product> filteredProducts = new();
     private bool isLoading = true;
     private bool showEditForm = false;
     private bool isEdit = false;
     private PostPutProductNoImage selectedProduct = new();
     private string? uploadedImageContent;
-    private string tokenMessage;
+    private string? searchQuery = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,7 +122,20 @@
     {
         isLoading = true;
         products = await ProductsService.GetProductsAsync();
+        filteredProducts = products; // Initialize filteredProducts with all products
         isLoading = false;
+    }
+
+    private void FilterProducts(string searchQuery)
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredProducts = products;
+        }
+        else
+        {
+            filteredProducts = products.Where(p => p.Pname.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
     }
 
     private void AddNewProduct()
@@ -198,8 +213,4 @@
             uploadedImageContent = Convert.ToBase64String(fileBytes);
         }
     }
-}
-@if (!string.IsNullOrEmpty(tokenMessage))
-{
-    <div class="alert alert-info mt-3">@tokenMessage</div>
 }

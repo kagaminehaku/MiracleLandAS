@@ -5,7 +5,11 @@
 @using MiracleLandAS.Services
 
 <div class="container mt-5">
-    <h1 class="text-center">Accounts Managerment</h1>
+    <h1 class="text-center">Accounts Management</h1>
+
+    <div class="mb-4">
+        <input type="text" class="form-control" placeholder="Search by username..." @bind="searchQuery" @oninput="(e) => FilterUsers(e.Value.ToString())" />
+    </div>
 
     @if (isLoading)
     {
@@ -15,13 +19,14 @@
             </div>
         </div>
     }
-    else if (customers != null && customers.Count > 0)
+    else if (filteredCustomers != null && filteredCustomers.Count > 0)
     {
         <div class="row">
-            @foreach (var customer in customers)
+            @foreach (var customer in filteredCustomers)
             {
                 <div class="col-md-6 mb-4">
                     <div class="card">
+                        <img src="@customer.Avt" alt="@customer.Username's avatar" class="card-img-top" style="max-height: 200px; object-fit: cover;" />
                         <div class="card-body">
                             <h5 class="card-title">@customer.Username</h5>
                             <p class="card-text"><strong>Email:</strong> @customer.Email</p>
@@ -52,7 +57,9 @@
 
 @code {
     private List<GetUserList>? customers;
+    private List<GetUserList>? filteredCustomers;
     private bool isLoading = true;
+    private string searchQuery = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -65,14 +72,27 @@
         try
         {
             customers = await UserManager.GetCustomersAsync();
+            filteredCustomers = customers;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading customers: {ex.Message}");
+            // Handle exceptions (log or display error)
         }
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private void FilterUsers(string searchQuery)
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredCustomers = customers;
+        }
+        else
+        {
+            filteredCustomers = customers?.Where(c => c.Username.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
         }
     }
 
